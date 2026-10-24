@@ -1,0 +1,27 @@
+export type OS = 'macos' | 'windows' | 'other' | 'unknown';
+export type Distribution = 'public' | 'workshop' | 'unknown';
+export type HelpState = 'needs_mentor' | 'answer_available' | 'fix_failed' | 'resolved';
+export type ProcessingState = 'idle' | 'processing' | 'complete' | 'failed';
+export type Language = 'en-IN' | 'hi-IN';
+export type Context = { os: OS; distribution: Distribution; version: string | null; targetApp?: string; errorText?: string };
+export type Scope = { os: OS[]; distribution: Distribution[]; versionPolicy: 'documented_public' | 'exact' | 'independent'; versions: string[]; rationale: string };
+export type Source = { url: string | null; note: string };
+export type FAQ = { id: string; revision: number; title: string; searchPhrases: string[]; bodyEn: string; bodyHi: string; scope: Scope; approval: 'source_reviewed' | 'mentor_approved' | 'draft'; approvedBy: string | null; source: Source; reviewedAt: string | null; withdrawnAt: string | null; supersedesVersion: number | null; answerId?: string };
+export type Session = { id: string; tokenHash: string; role: 'participant' | 'mentor'; displayName: string; createdAt: string };
+export type Issue = {
+  id: string; workshopId: 'kivi'; ownerSessionId: string; revision: number; inputRevision: number;
+  originalText: string; reviewedText: string; transcript: string; ocrText: string; context: Context;
+  attemptedSteps: string; mediaIds: string[]; helpState: HelpState; processingState: ProcessingState;
+  processingError: string | null; clarification: string | null; candidateGroupId: string | null;
+  confirmedGroupId: string | null; answerDeliveryIds: string[]; createdAt: string; updatedAt: string;
+};
+export type Answer = { id: string; version: number; title: string; bodyEn: string; bodyHi: string; source: Source; scope: Scope; author: string; createdAt: string; faqId?: string; faqRevision?: number };
+export type Delivery = { id: string; issueId: string; answerId: string; deliveredAt: string; outcome: 'pending' | 'solved' | 'failed'; attemptedSteps: string };
+export type Group = { id: string; revision: number; title: string; issueIds: string[]; context: Context; createdAt: string };
+export type Media = { id: string; ownerSessionId: string; mime: string; bytes: number; hash: string; path: string; kind: 'image' | 'audio'; status: ProcessingState; text: string; error: string | null; jobId: string | null; provenance?: 'live' | 'live_cache'; createdAt: string };
+export type Event = { id: string; actor: string; entityId: string; operation: string; at: string };
+export type Idempotency = { hash: string; response: unknown; at: string };
+export type AppState = { schemaVersion: 1; seedVersion: string; sessions: Session[]; issues: Issue[]; faqs: FAQ[]; faqHistory: FAQ[]; answers: Answer[]; deliveries: Delivery[]; groups: Group[]; media: Media[]; events: Event[]; idempotency: Record<string, Idempotency> };
+export type IssueView = Omit<Issue, 'ownerSessionId'> & { deliveries: (Delivery & { answer: Answer; superseded: boolean; withdrawn: boolean })[]; media: Pick<Media, 'id' | 'kind' | 'mime' | 'status'>[] };
+export type FAQView = FAQ & { occurrences: number };
+export type Board = { issues: IssueView[]; groups: (Group & { blockedCount: number })[]; suggestions: { issueIds: string[]; title: string; context: Context }[]; faqs: FAQView[]; counts: Record<HelpState, number>; blockedParticipants: number; health: { configured: boolean; enabled: boolean; used: number; limit: number; remaining: number } };

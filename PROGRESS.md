@@ -2,9 +2,9 @@
 
 ## Current state
 
-- Phase: handoff prepared; application not implemented.
+- Phase: implementation underway; GitHub connected, scaffold and domain/store implemented.
 - Implementing agent intended by user: Sol 6.1.
-- User scope for this preparation turn: handoff documents and fixtures only.
+- Current user scope: implement the handoff and push each completed task directly to GitHub main.
 - Workspace: `G:\Sarvam`.
 - Existing file preserved: `Kivi-win-x64-stable-1.9.6.exe`.
 - Installed runtime observed: Node v22.13.1, npm 10.9.2, Python 3.13 executable.
@@ -18,8 +18,8 @@ Chat request returned HTTP 200 for `sarvam-105b-conversations`, 28 prompt + 12 c
 
 ## Gates
 
-- [ ] Gate 0: scaffold/runtime/scripts
-- [ ] Gate 1: domain/store/authorization
+- [x] Gate 0: scaffold/runtime/scripts (final verification scripts arrive with their gates)
+- [x] Gate 1: domain/store/authorization
 - [ ] Gate 2: complete text workflow
 - [ ] Gate 3: media/adapters/budget/cache
 - [ ] Gate 4: grounding/grouping
@@ -33,6 +33,9 @@ The next agent must append real entries, not replace failures with summaries.
 
 | Date/time | Gate | Command or action | Outcome | Evidence | Mode |
 | --- | --- | --- | --- | --- | --- |
+| 2026-10-24 16:02 IST | 0–1 | `npm run typecheck`; `npm test`; local dev startup | Typecheck passed; 5 tests passed, including individual feedback/reuse, scope, permissions, stale revisions, idempotency and concurrent/restarted store | Local command output | Offline; zero inference |
+| 2026-10-24 16:02 IST | 0–1 | Initial domain test run | Failed because sandbox temporary directory denied replacement rename; tests moved to isolated `.data/tests` and passed without weakening atomic writes | Local command output | Offline |
+| 2026-10-24 16:00 IST | GitHub | Initialize and push handoff | `main` tracks `origin/main`; initial handoff pushed | Commit `7eb0ba7` | GitHub; no inference |
 | 2026-10-24 15:54 IST | Handoff only | `node scripts/validate-handoff.mjs` | Passed: JSON parsing, local links, seed/scenario references, safe env defaults, PNG/WAV integrity | Reproducible local checker; 5 source-reviewed FAQs, 2 drafts, 24 scenarios, 3.095s mono 16kHz PCM WAV | Offline; zero inference |
 | 2026-10-24 15:54 IST | Handoff only | Visual inspection of generated question-card PNG | Readable question, context and synthetic label; no real attendee content | `fixtures/media/question-card.png` | Local image inspection |
 

@@ -1,0 +1,42 @@
+{
+  "name": "unblock-sarvam",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "dev": "next dev --hostname 127.0.0.1",
+    "dev:fixtures": "node scripts/dev-fixtures.mjs",
+    "build": "next build",
+    "start": "next start --hostname 127.0.0.1",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src tests scripts --max-warnings=0",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:live": "node --env-file-if-exists=.env.local --import tsx scripts/live-smoke.ts",
+    "verify:release": "node scripts/verify-release.mjs",
+    "verify:handoff": "node scripts/validate-handoff.mjs"
+  },
+  "dependencies": {
+    "lucide-react": "1.61.0",
+    "next": "16.4.3",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "server-only": "0.0.1",
+    "sharp": "0.35.5",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1",
+    "@types/node": "26.6.5",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "eslint": "9.39.5",
+    "eslint-config-next": "16.4.3",
+    "tsx": "4.23.15",
+    "typescript": "6.0.3",
+    "vitest": "5.0.5"
+  }
+}
