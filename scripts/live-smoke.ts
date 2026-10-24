@@ -14,6 +14,7 @@ async function main(){
   const configuredLimit=Number(process.env.LIVE_MAX_DISPATCHES||'6');assert(configuredLimit<=6&&configuredLimit>0,'Validation cap must be between one and six.');
   await mkdir('.evidence',{recursive:true});
   let evidence:Evidence={failures:{}};try{evidence=JSON.parse(await readFile(evidencePath,'utf8'));}catch(error){if((error as NodeJS.ErrnoException).code!=='ENOENT')throw error;}
+  if(process.argv.includes('--repair-chat')){delete evidence.failures.chat;delete evidence.issue;}
   const save=()=>writeFile(evidencePath,JSON.stringify(evidence,null,2),{mode:0o600});
   const server=spawn(process.execPath,['node_modules/next/dist/bin/next','start','--hostname','127.0.0.1','--port','3200'],{stdio:'ignore',env:{...process.env,ALLOW_LIVE_API:'true',DATA_DIR:'.data/live-validation',DISPATCH_LEDGER_PATH:process.env.DISPATCH_LEDGER_PATH||'.data/dispatch-ledger.json',PROVIDER_CACHE_DIR:process.env.PROVIDER_CACHE_DIR||'.data/provider-cache'}});
   try{

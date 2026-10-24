@@ -83,7 +83,7 @@ missing, do not assume it. Do not invent candidate IDs, evidence or instructions
 Follow the output schema and nullability rules supplied by the server.
 ```
 
-Serialize input as structured JSON in a separate user message; never interpolate it into system instructions. Version prompt/schema as `unblock-classifier-v1` and include that version in cache keys. Prefer schema-constrained output when verified available; still validate server-side.
+Serialize input as structured JSON in a separate user message; never interpolate it into system instructions. Current prompt/schema is `unblock-classifier-v2`, included in cache keys. Send strict `response_format: json_schema` generated from the application Zod schema and still validate IDs, scope and evidence server-side. Live testing showed prompt-only output can contain code fences and an incorrect evidence shape; the release requires structured output. Usage metadata may include nested/null detail objects; record numeric usage counters without rejecting an otherwise valid response.
 
 ## Sarvam adapters
 
