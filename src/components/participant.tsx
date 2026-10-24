@@ -53,7 +53,7 @@ export function Participant() {
 function ShieldSmall() { return <Check size={13}/>; }
 function IssueCard({ issue, refresh, onError, edit }: { issue: IssueView; refresh: () => Promise<void>; onError: (error: string) => void; edit: () => void }) {
   const [busy, setBusy] = useState(false), [steps, setSteps] = useState(issue.attemptedSteps);
-  const latest = issue.deliveries.at(-1);
+  const latest = issue.deliveries.filter(d=>d.inputRevision===issue.inputRevision).at(-1);
   async function feedback(outcome: 'solved' | 'failed' | 'reopen') { setBusy(true); try { await api(`issues/${issue.id}/feedback`, { outcome, answerId: latest?.answer.id ?? null, attemptedSteps: steps, revision: issue.revision }); await refresh(); } catch (e) { onError(message(e)); } finally { setBusy(false); } }
   return <article className="card issue-card"><div className="issue-top"><StateBadge state={issue.helpState}/><time className="small">{new Date(issue.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</time></div><h3>{issue.reviewedText}</h3><div className="issue-meta">{issue.context.os === 'macos' ? 'macOS' : issue.context.os} · {issue.context.distribution}{issue.context.version ? ` · ${issue.context.version}` : ''}<button className="text-button" onClick={edit}><PencilLine size={13}/> Edit</button></div>
     {issue.clarification && <div className="info-notice">{issue.clarification}</div>}{issue.processingError && <div><p className="small muted">{issue.processingError} Your request is saved for the mentor.</p><button type="button" className="text-button" disabled={busy} onClick={async()=>{setBusy(true);try{await api(`issues/${issue.id}/analyze`,{revision:issue.revision});await refresh();}catch(e){onError(message(e));}finally{setBusy(false);}}}>Check again</button></div>}
@@ -62,5 +62,6 @@ function IssueCard({ issue, refresh, onError, edit }: { issue: IssueView; refres
       <div className="feedback-row"><span>Did this get you moving?</span><button className="button success small-button" disabled={busy} onClick={() => feedback('solved')}><ThumbsUp size={14}/>Solved</button><button className="button secondary small-button" disabled={busy} onClick={() => feedback('failed')}>Still stuck</button></div>
     </div> : <div className="waiting-note"><Clock3 size={17}/><span><strong>Your question is in the mentor queue.</strong><br/>You can keep this tab open. Replies appear here.</span></div>}
     {(issue.helpState === 'resolved' || issue.helpState === 'fix_failed') && <button className="text-button" disabled={busy} onClick={() => feedback('reopen')}><Undo2 size={13}/>Ask for more help</button>}
+    {issue.deliveries.length>1||issue.deliveries.length>0&&!latest?<details className="more-context"><summary>Earlier answers and feedback</summary>{issue.deliveries.filter(d=>d.id!==latest?.id).map(d=><div key={d.id}><h4>{d.answer.title}</h4><p className="answer-body">{d.answer.bodyEn}</p><span className="small">{d.outcome}{d.attemptedSteps?` · ${d.attemptedSteps}`:''}</span></div>)}</details>:null}
   </article>;
 }

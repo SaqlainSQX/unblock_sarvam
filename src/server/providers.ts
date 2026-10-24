@@ -10,7 +10,7 @@ export type Capability = 'asr' | 'vision' | 'chat' | 'tts';
 export type Meta = { provenance: 'live' | 'live_cache'; model: string; requestId?: string; durationMs: number; usage?: Record<string, number> };
 type LedgerEntry = { id: string; capability: Capability; fingerprint: string; model: string; at: string; result: 'pending' | 'success' | 'failed'; requestId?: string; usage?: Record<string, number> };
 type Ledger = { entries: LedgerEntry[]; pollingRequests: number };
-const ledgerPath = () => resolve(process.env.DISPATCH_LEDGER_PATH || '.data/dispatch-ledger.json');
+const ledgerPath = () => resolve(/*turbopackIgnore: true*/process.env.DISPATCH_LEDGER_PATH || '.data/dispatch-ledger.json');
 const limit = () => Math.max(0, Number.parseInt(process.env.LIVE_MAX_DISPATCHES || '6', 10) || 0);
 export async function providerHealth() { const ledger = await readJSON<Ledger>(ledgerPath(), () => ({ entries: [], pollingRequests: 0 })); return { configured: !!process.env.SARVAM_API_KEY, enabled: process.env.ALLOW_LIVE_API === 'true', used: ledger.entries.length, limit: limit(), remaining: Math.max(0, limit() - ledger.entries.length) }; }
 export async function reserve(capability: Capability, fingerprint: string, model: string) {
@@ -39,7 +39,7 @@ async function wire(path: string, init: RequestInit) {
 }
 async function paid<T>(capability: Capability, model: string, owner: string, input: unknown, work: () => Promise<{ value: T; meta?: Partial<Meta> }>): Promise<{ value: T; meta: Meta }> {
   const fingerprint = hash(JSON.stringify({ capability, model, owner, input }));
-  const cachePath = resolve(process.env.PROVIDER_CACHE_DIR || '.data/provider-cache', `${fingerprint}.json`);
+  const cachePath = resolve(/*turbopackIgnore: true*/process.env.PROVIDER_CACHE_DIR || '.data/provider-cache', `${fingerprint}.json`);
   return serialized(cachePath, async () => {
     const cached = await readJSON<{ value: T; meta: Meta } | null>(cachePath, () => null);
     if (cached) return { ...cached, meta: { ...cached.meta, provenance: 'live_cache' as const } };
@@ -76,6 +76,7 @@ export function validateProposal(raw: unknown, issue: Pick<Issue, 'reviewedText'
   if (p.intent === 'faq' && (!p.faqId || p.groupId !== null || !faqs.some(f => f.id === p.faqId) || p.reasonCode !== 'supported_faq')) throw new Error('Invalid FAQ proposal');
   if (p.intent === 'group' && (!p.groupId || p.faqId !== null || !groups.some(g => g.id === p.groupId) || p.reasonCode !== 'similar_symptom')) throw new Error('Invalid group proposal');
   if (['mentor','clarify'].includes(p.intent) && (p.faqId !== null || p.groupId !== null)) throw new Error('Unexpected candidate');
+  if (['mentor','clarify'].includes(p.intent) && !['no_supported_answer','missing_context','conflicting_context'].includes(p.reasonCode)) throw new Error('Invalid escalation reason');
   if (p.intent === 'clarify' ? !p.needsClarification || !p.clarification : p.needsClarification || p.clarification !== null) throw new Error('Invalid clarification');
   if (['faq','group'].includes(p.intent) && !p.evidence.length) throw new Error('Missing evidence');
   for (const evidence of p.evidence) if (!issue[evidence.field].normalize('NFKC').includes(evidence.quote.normalize('NFKC'))) throw new Error('Invented evidence');

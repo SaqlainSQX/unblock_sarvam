@@ -4,6 +4,7 @@ const config: NextConfig = {
   distDir: process.env.NEXT_BUILD_DIR || '.next',
   poweredByHeader: false,
   serverExternalPackages: ['sharp'],
+  outputFileTracingExcludes: {'/*':['./.data/**/*','./.evidence/**/*','./.env*','./fixtures/**/*','./tests/**/*','./*.exe','./docs/**/*','./.git/**/*']},
   async headers() {
     return [{ source: '/(.*)', headers: [
       { key: 'X-Content-Type-Options', value: 'nosniff' },

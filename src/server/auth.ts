@@ -14,7 +14,7 @@ export async function authenticate(request: Request, store: Store = getStore()) 
   const cookie = request.headers.get('cookie')?.split(';').map(v => v.trim()).find(v => v.startsWith('unblock_session='))?.slice('unblock_session='.length);
   if (!cookie || !/^[a-f0-9]{64}$/.test(cookie)) throw new AppError(401, 'Please join the workshop or sign in again.');
   const session = (await store.read()).sessions.find(s => s.tokenHash === hash(cookie));
-  if (!session) throw new AppError(401, 'Your session has expired. Please join again.');
+  if (!session || Date.now()-Date.parse(session.createdAt)>7*24*60*60*1000) throw new AppError(401, 'Your session has expired. Please join again.');
   return session;
 }
 export function mentorOnly(session: Session) { if (session.role !== 'mentor') throw new AppError(403, 'Mentor access is required.'); }

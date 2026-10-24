@@ -1,0 +1,28 @@
+import { afterEach,beforeEach,expect,it,vi } from 'vitest';
+import { mkdir,mkdtemp,rm } from 'node:fs/promises';
+import { resolve } from 'node:path';
+import { Store } from '@/server/store';
+import { createSession,assertOrigin } from '@/server/auth';
+import { WorkshopService } from '@/server/services/workshop';
+import { analyze } from '@/server/services/analysis';
+import { MediaService } from '@/server/services/media';
+import { providerHealth } from '@/server/providers';
+import { readFile } from 'node:fs/promises';
+let directory:string,store:Store,service:WorkshopService;
+const question={reviewedText:'How can I edit selected text in Kivi?',context:{os:'macos',distribution:'public',version:null}};
+beforeEach(async()=>{await mkdir('.data/tests',{recursive:true});directory=await mkdtemp('.data/tests/resilience-');store=new Store(resolve(directory,'app'));service=new WorkshopService(store);vi.stubEnv('ALLOW_LIVE_API','true');vi.stubEnv('SARVAM_API_KEY','offline-only');vi.stubEnv('DISPATCH_LEDGER_PATH',resolve(directory,'ledger.json'));vi.stubEnv('PROVIDER_CACHE_DIR',resolve(directory,'cache'));});
+afterEach(async()=>{vi.unstubAllEnvs();await rm(directory,{recursive:true,force:true});});
+const response=(body:unknown)=>new Response(JSON.stringify(body));
+it('S14 discards model completion after participant edits the issue',async()=>{
+  const actor=(await createSession('participant','',store)).session;const issue=await service.createIssue(actor,question,'create-stale');
+  let release!:(response:Response)=>void;let entered!:()=>void;const started=new Promise<void>(resolve=>{entered=resolve;});
+  vi.stubGlobal('fetch',vi.fn(()=>{entered();return new Promise<Response>(resolve=>{release=resolve;});}));const pending=analyze(actor,issue.id,false,store);await started;
+  await service.editIssue(actor,issue.id,{...question,reviewedText:'Changed request for the workshop Windows build.',context:{os:'windows',distribution:'workshop',version:'1.9.6'},revision:issue.revision},'edit-during');
+  release(response({choices:[{message:{content:JSON.stringify({intent:'faq',faqId:'kivi-selected-text',groupId:null,evidence:[{field:'reviewedText',quote:'edit selected text'}],needsClarification:false,clarification:null,reasonCode:'supported_faq'})},finish_reason:'stop'}]}));await pending;
+  const current=(await service.issues(actor))[0];expect(current.context.os).toBe('windows');expect(current.deliveries).toHaveLength(0);expect(current.helpState).toBe('needs_mentor');
+});
+it('S17 upstream failure retains the saved issue and honest processing error',async()=>{const actor=(await createSession('participant','',store)).session;const issue=await service.createIssue(actor,question,'create-timeout');vi.stubGlobal('fetch',vi.fn(async()=>{throw new Error('network');}));await analyze(actor,issue.id,false,store);const saved=(await service.issues(actor))[0];expect(saved.helpState).toBe('needs_mentor');expect(saved.processingState).toBe('failed');expect((await providerHealth()).used).toBe(1);});
+it('S18 resumed vision processing reuses the persisted job without a second submission',async()=>{const actor=(await createSession('participant','',store)).session;let submissions=0,polls=0;vi.stubGlobal('fetch',vi.fn(async(url:string)=>{if(url.endsWith('/extract')){submissions++;return response({job_id:'existing-job',status:'pending'});}if(url.endsWith('/status')){polls++;return response({status:polls===1?'running':'completed'});}return response({result:{visible_text:'Existing job result'}});}));const media=new MediaService(store);const uploaded=await media.upload(actor,await readFile('fixtures/media/question-card.png'),'image/png','upload-image');await media.process(actor,uploaded.id);await media.status(actor,uploaded.id);const restarted=new MediaService(new Store(resolve(directory,'app')));expect((await restarted.process(actor,uploaded.id)).status).toBe('complete');expect(submissions).toBe(1);expect((await providerHealth()).used).toBe(1);});
+it('S24 failed attempts remain after a new answer; stale delivery feedback cannot resolve an edited question',async()=>{const actor=(await createSession('participant','',store)).session;const issue=await service.createIssue(actor,{...question,reviewedText:'edit selected text'},'known-question');const first=issue.deliveries[0].answer.id;await service.feedback(actor,issue.id,{outcome:'failed',answerId:first,attemptedSteps:'Tried the selected text workflow.',revision:issue.revision},'feedback-failed');const current=(await service.issues(actor))[0];await service.editIssue(actor,issue.id,{...question,reviewedText:'Now a different issue.',revision:current.revision},'edit-newer');const edited=(await service.issues(actor))[0];await expect(service.feedback(actor,issue.id,{outcome:'solved',answerId:first,revision:edited.revision},'late-feedback')).rejects.toMatchObject({status:409});expect(edited.deliveries[0].attemptedSteps).toContain('Tried');});
+it('transaction failure preserves the last committed store state',async()=>{await store.transaction(s=>{s.seedVersion='committed';});await expect(store.transaction(s=>{s.seedVersion='should-not-save';throw new Error('abort');})).rejects.toThrow('abort');expect((await store.read()).seedVersion).toBe('committed');});
+it('browser Origin checks reject cross-site requests while accepting Next internal host rewriting',()=>{expect(()=>assertOrigin(new Request('http://localhost:3100/api/issues',{headers:{host:'127.0.0.1:3100',origin:'http://127.0.0.1:3100'}}))).not.toThrow();expect(()=>assertOrigin(new Request('http://localhost:3100/api/issues',{headers:{host:'127.0.0.1:3100',origin:'https://attacker.invalid'}}))).toThrow();});

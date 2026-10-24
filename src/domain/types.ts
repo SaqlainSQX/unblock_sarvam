@@ -16,7 +16,7 @@ export type Issue = {
   confirmedGroupId: string | null; answerDeliveryIds: string[]; createdAt: string; updatedAt: string;
 };
 export type Answer = { id: string; version: number; title: string; bodyEn: string; bodyHi: string; source: Source; scope: Scope; author: string; createdAt: string; faqId?: string; faqRevision?: number };
-export type Delivery = { id: string; issueId: string; answerId: string; deliveredAt: string; outcome: 'pending' | 'solved' | 'failed'; attemptedSteps: string };
+export type Delivery = { id: string; issueId: string; inputRevision: number; answerId: string; deliveredAt: string; outcome: 'pending' | 'solved' | 'failed'; attemptedSteps: string };
 export type Group = { id: string; revision: number; title: string; issueIds: string[]; context: Context; createdAt: string };
 export type Media = { id: string; ownerSessionId: string; mime: string; bytes: number; hash: string; path: string; kind: 'image' | 'audio'; status: ProcessingState; text: string; error: string | null; jobId: string | null; provenance?: 'live' | 'live_cache'; createdAt: string };
 export type Event = { id: string; actor: string; entityId: string; operation: string; at: string };

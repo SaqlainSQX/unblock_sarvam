@@ -107,7 +107,7 @@ Use Document AI extraction, powered by Sarvam Vision 1.5, for text in one image.
 
 Persist job_id; poll current Document AI status and fetch structured results. The current guide documents SDK `getStatus(job_id)` and `getResults(job_id)` with positional job ID and snake_case wire fields. **Before implementation, inspect the installed official JS SDK exports/types for the exact namespace and transport paths.** The handoff has verified the lifecycle but has not pinned a JS SDK or verified its current status/results HTTP paths. Do not invent those paths or use the legacy `/doc-digitization/job/v1` response schema with the new extract endpoint. This is an offline adapter-preflight task, not a reason to probe paid endpoints.
 
-If using raw fetch instead, resolve status/results paths from the current official reference/SDK source first and record them here. Use the application polling/error policy in [LIVE_CUTOVER.md](../LIVE_CUTOVER.md). Validate `result.visible_text` before showing it for user review. Unknown/partial/failed output is never a fabricated screenshot diagnosis.
+Verified during implementation from official `sarvamai@1.1.12` package source (`dist/cjs/api/resources/docAi/client/Client.js`): namespace `client.docAi`; GET `/doc-ai/v1/job/{job_id}/status`; GET `/doc-ai/v1/job/{job_id}/results?format=json`. The application uses native fetch with these paths and no automatic retries. Use the application polling/error policy in [LIVE_CUTOVER.md](../LIVE_CUTOVER.md). Validate `result.visible_text` before showing it for user review. Unknown/partial/failed output is never a fabricated screenshot diagnosis.
 
 ## Cost and cache boundary
 

@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
+import { resolve } from 'node:path';
 async function ask(page: Page, question: string, mac = false) {
   await page.goto('/w/kivi');
   await expect(page.getByRole('button', { name: 'Find my next step' })).toBeEnabled();
@@ -60,4 +61,27 @@ test('desktop and mobile have usable layout and truthful empty states', async ({
   await page.setViewportSize({ width: 390, height: 844 }); await page.screenshot({ path: '.evidence/participant-mobile.png', fullPage: true });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.getByRole('button', { name: /My requests/ }).click(); await expect(page.getByText('A clear runway')).toBeVisible();
+});
+test('audio upload and screenshot review reach a grounded answer with on-demand speech',async({page})=>{
+  await page.goto('/w/kivi');await expect(page.getByRole('button',{name:'Find my next step'})).toBeEnabled();
+  await page.getByLabel('Upload audio WAV').setInputFiles(resolve('fixtures/media/question-en.wav'));
+  await expect(page.getByLabel('Recording preview')).toBeVisible();
+  await page.getByRole('button',{name:'Transcribe recording'}).click();await expect(page.getByLabel('Review and correct the extracted text',{exact:false})).toHaveValue('How can I edit selected text in Kivi?');
+  await page.getByRole('button',{name:'Use reviewed text'}).click();
+  await page.getByLabel('Upload screenshot').setInputFiles(resolve('fixtures/media/question-card.png'));
+  await expect(page.getByAltText('Screenshot preview before processing')).toBeVisible();await page.getByRole('button',{name:'Read screenshot'}).click();
+  await expect(page.getByLabel('Review and correct the extracted text',{exact:false})).toBeVisible({timeout:20000});await page.getByRole('button',{name:'Use reviewed text'}).click();
+  await page.getByLabel('Operating system',{exact:true}).selectOption('macos');await page.getByLabel('App distribution',{exact:true}).selectOption('public');
+  await page.getByRole('button',{name:'Find my next step'}).click();await expect(page.getByText('On the public Mac app, select the text',{exact:false})).toBeVisible();
+  expect(await page.locator('audio[autoplay]').count()).toBe(0);
+  await page.getByRole('button',{name:'Listen to reviewed answer'}).click();await expect(page.getByLabel('Spoken reviewed answer')).toBeVisible();
+  await expect(page.getByText('Generated audio',{exact:false})).toBeVisible();
+  await page.screenshot({path:'.evidence/media-workflow.png',fullPage:true});
+});
+test('recorder captures actual browser microphone input as WAV and permits cancellation',async({browser})=>{
+  const context=await browser.newContext({permissions:['microphone']});const page=await context.newPage();await page.goto('/w/kivi');
+  await expect(page.getByRole('button',{name:'Find my next step'})).toBeEnabled();await page.getByRole('button',{name:'Speak your question'}).click();
+  await expect(page.getByRole('button',{name:/Stop ·/})).toBeVisible();await expect(page.getByRole('button',{name:/Stop · 1s/})).toBeVisible();
+  await page.getByRole('button',{name:/Stop ·/}).click();await expect(page.getByLabel('Recording preview')).toBeVisible();
+  await page.getByRole('button',{name:'Remove attachment'}).click();await page.getByRole('button',{name:'Speak your question'}).click();await expect(page.getByRole('button',{name:/Stop ·/})).toBeVisible();await page.getByRole('button',{name:'Cancel',exact:true}).click();await expect(page.getByRole('button',{name:'Speak your question'})).toBeVisible();await context.close();
 });

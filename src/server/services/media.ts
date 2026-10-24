@@ -62,7 +62,7 @@ export class MediaService {
     const state=await this.store.read();const answer=requireValue(state.answers.find(a=>a.id===answerId));
     if(actor.role!=='mentor'&&!state.deliveries.some(d=>d.answerId===answerId&&state.issues.some(i=>i.id===d.issueId&&i.ownerSessionId===actor.id)))throw new AppError(404,'Answer not found.');
     const faq=state.faqs.find(f=>f.id===answer.faqId||f.answerId===answerId);
-    if(faq&&(faq.withdrawnAt||answer.faqRevision&&faq.revision!==answer.faqRevision))throw new AppError(409,'This answer changed. Ask for current guidance before playing it.');
+    if(faq&&(faq.withdrawnAt||(answer.faqRevision?faq.revision!==answer.faqRevision:faq.revision>1)))throw new AppError(409,'This answer changed. Ask for current guidance before playing it.');
     const text=language==='hi-IN'?answer.bodyHi:answer.bodyEn;if(!text)throw new AppError(400,'A reviewed answer in that language is not available.');
     const result=await speak(actor.id,answer.id,text.slice(0,450),language,`${faq?.revision||answer.version}`);
     const audioIds:string[]=[];

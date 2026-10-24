@@ -18,12 +18,12 @@ export function issueView(state: AppState, issue: Issue): IssueView {
   return { ...safe, media: state.media.filter(m => issue.mediaIds.includes(m.id)).map(({ id, kind, mime, status }) => ({ id, kind, mime, status })), deliveries: issue.answerDeliveryIds.map(id => {
     const delivery = requireValue(state.deliveries.find(d => d.id === id));
     const answer = requireValue(state.answers.find(a => a.id === delivery.answerId));
-    const faq = state.faqs.find(f => f.id === answer.faqId);
-    return { ...delivery, answer, withdrawn: !!faq?.withdrawnAt, superseded: !!faq && faq.revision !== answer.faqRevision };
+    const faq = state.faqs.find(f => f.id === answer.faqId || f.answerId===answer.id);
+    return { ...delivery, answer, withdrawn: !!faq?.withdrawnAt, superseded: !!faq && (answer.faqRevision ? faq.revision !== answer.faqRevision : faq.revision>1) };
   }) };
 }
 export function deliver(state: AppState, issue: Issue, answer: Answer) {
-  const delivery: Delivery = { id: randomUUID(), issueId: issue.id, answerId: answer.id, deliveredAt: now(), outcome: 'pending', attemptedSteps: '' };
+  const delivery: Delivery = { id: randomUUID(), issueId: issue.id,inputRevision:issue.inputRevision, answerId: answer.id, deliveredAt: now(), outcome: 'pending', attemptedSteps: '' };
   state.deliveries.push(delivery); issue.answerDeliveryIds.push(delivery.id);
   issue.helpState = 'answer_available'; issue.updatedAt = now(); issue.revision++;
 }
@@ -79,7 +79,7 @@ export class WorkshopService {
       const latest = state.deliveries.find(d => d.id === issue.answerDeliveryIds.at(-1));
       if (input.outcome === 'reopen') { issue.helpState = issue.helpState === 'fix_failed' ? 'fix_failed' : 'needs_mentor'; }
       else {
-        if (!latest || latest.answerId !== input.answerId) throw new AppError(409, 'Please respond to the latest answer.');
+        if (!latest || latest.answerId !== input.answerId || latest.inputRevision!==issue.inputRevision) throw new AppError(409, 'Please respond to the latest answer for your current question.');
         latest.outcome = input.outcome; latest.attemptedSteps = input.attemptedSteps;
         issue.helpState = input.outcome === 'solved' ? 'resolved' : 'fix_failed';
       }
