@@ -1,72 +1,115 @@
-# Unblock — Kivi Workshop Edition
+# Unblock
 
-A multilingual workshop help desk: answer recurring questions from verified guidance, group related unresolved reports, let mentors answer once, and track who is actually unblocked.
+### A multilingual help desk for the Kivi workshop
 
-## Current status
+Participants ask for help by text or voice, optionally attach a screenshot, and see guidance that applies to their platform. Mentors see the questions that still need attention, confirm related reports, answer selected participants together, and learn who is actually unblocked.
 
-**This repository is an implementation handoff, not a working application.** The user requested documents and fixtures for Sol 6.1 to implement. No application dependencies have been installed. No application tests or new Sarvam calls have been run during preparation.
+Unblock is an independent workshop companion. It does not control Kivi or present itself as an official Kivi or Sarvam support service.
 
-An earlier, separate chat smoke test succeeded with `sarvam-105b-conversations` (HTTP 200, 40 total tokens). This establishes that chat worked then; it does not establish speech, vision, current credits, or application readiness. No credential is stored here.
+## How it works
 
-## Start here
+```mermaid
+flowchart LR
+  P[Participant question] --> R[Review transcript or screenshot text]
+  R --> S[Save issue and platform context]
+  S --> F{Applicable approved FAQ?}
+  F -->|Yes| A[Show sourced answer]
+  F -->|No or uncertain| Q[Mentor queue]
+  Q --> G[Mentor confirms related reports]
+  G --> M[Mentor publishes to selected people]
+  M --> A
+  M -->|Separately approves reuse| F
+  A --> O[Each participant selects Solved or Still stuck]
+  O -->|Still stuck| Q
+```
 
-1. Read [AGENTS.md](AGENTS.md).
-2. Read [PRD.md](PRD.md) and [ARCHITECTURE.md](ARCHITECTURE.md).
-3. Execute [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) in order.
-4. Follow [TESTING.md](TESTING.md) and [LIVE_CUTOVER.md](LIVE_CUTOVER.md).
-5. Update [PROGRESS.md](PROGRESS.md) after every milestone.
+An answer is offered only when its approved scope fits the participant's OS, distribution, and version. Sarvam can suggest an existing FAQ or a related group, but cannot write a new fix, approve guidance, or mark someone resolved. The mentor controls publication; each participant controls their own outcome.
 
-Paste [HANDOFF.md](HANDOFF.md) into the implementing agent to begin.
+### Sarvam in the workflow
 
-The handoff itself can be checked now, without installing dependencies: `node scripts/validate-handoff.mjs`. The [checker](scripts/validate-handoff.mjs) validates local links, FAQ/scenario consistency, empty credential defaults, and sample-media integrity. It does not validate an application that has not been built.
+| Capability | Purpose | Trigger |
+| --- | --- | --- |
+| Saaras speech to text | Transcribe a short recording for participant review | Voice processing request |
+| Sarvam Vision / Document AI | Extract visible text from a screenshot for review | Screenshot processing request |
+| Sarvam 105B | Propose a matching approved FAQ or related issue group | An unstructured question needs classification |
+| Bulbul text to speech | Read an approved answer aloud | Participant requests playback |
 
-## The product in one minute
+Clear, known FAQ matches need no model call. Refreshing, viewing a queue, or polling status does not start paid inference.
 
-- A participant asks by text or a short voice recording and optionally attaches a screenshot.
-- An applicable approved FAQ is offered with its source and platform scope.
-- Unanswered or ambiguous issues enter a mentor queue; related issues are suggested as groups.
-- A mentor publishes an answer to selected members and can approve it for future reuse.
-- Each participant independently selects **Solved** or **Still stuck**.
-- Dashboard counts represent actual participant states, not invented impact metrics.
+## Run locally
 
-This is an independent workshop companion built with Sarvam APIs. It does not require a Kivi API, plugin, account integration, or access to participants' computers.
+**Requirements:** Node.js 22.13 or newer, one Node process, and durable local disk. This prototype is intended for one workshop.
 
-## Handoff map
+```powershell
+npm install
+node scripts/setup-local.mjs
+```
 
-| File | Purpose |
-| --- | --- |
-| [PRD.md](PRD.md) | User flows, UI, scope, acceptance criteria |
-| [ARCHITECTURE.md](ARCHITECTURE.md) | Stack, persistence, boundaries, data model, routes |
-| [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) | Ordered milestones and completion gates |
-| [TESTING.md](TESTING.md) | Offline test matrix, browser tests, regression requirements |
-| [LIVE_CUTOVER.md](LIVE_CUTOVER.md) | Budget, actual integration, removal of runtime fixtures |
-| [DECISIONS.md](DECISIONS.md) | Accepted tradeoffs and how to change them |
-| [docs/AI_CONTRACTS.md](docs/AI_CONTRACTS.md) | Provider interface, prompt constraints, API references |
-| [docs/DEMO.md](docs/DEMO.md) | Honest demo, rehearsals, release checklist |
-| [docs/SOURCES.md](docs/SOURCES.md) | Official sources, scope, unresolved facts |
-| [data/faq.seed.json](data/faq.seed.json) | Source-reviewed starter guidance and unpublished drafts |
-| [fixtures/README.md](fixtures/README.md) | Synthetic test data and expected use |
+The setup script prepares a private `.env.local` and generates a mentor passcode there. Add your key as `SARVAM_API_KEY`; set `ALLOW_LIVE_API=true` when you intend to use live Sarvam capabilities. Keep the key and passcode out of Git and browser code.
 
-## Intended implementation
+```powershell
+npm run build
+npm run start
+```
 
-Next.js App Router, React, TypeScript, a single Node server, local file persistence, Zod validation, Vitest, and Playwright. Use the installed Node 22 runtime. Choose mutually compatible current package versions once and commit the lockfile when implementation begins. Keep the existing `Kivi-win-x64-stable-1.9.6.exe` untouched and untracked.
+Open the [participant page](http://127.0.0.1:3000/w/kivi) and [mentor desk](http://127.0.0.1:3000/mentor). Use another browser profile or private window to try both roles independently. For development, use `npm run dev` instead of build and start.
 
-The implementing agent will create these commands; **they do not exist yet**:
+The repository includes only `.env.example`, with live calls disabled and no credentials.
 
-```text
-npm run dev:fixtures      # unmistakably labelled, offline development only
+## What the app includes
+
+- Text requests, microphone capture, audio upload, screenshot preview, transcript and extracted-text review, and on-demand spoken answers.
+- Approved FAQ selection without a model call; strictly validated Sarvam classification for unstructured questions.
+- Platform/distribution/version-aware matching and honest escalation to a mentor.
+- Suggested related reports, mentor-confirmed groups, selected-recipient answers, and independent Solved/Still stuck outcomes.
+- Explicit FAQ reuse approval, editing/withdrawal, immutable history, local persistence and private sessions.
+- Persistent dispatch budget, authorized private caching, no automatic paid retries, and visible failure states.
+
+The seed knowledge contains five source-reviewed public Mac FAQs. Windows workshop guidance remains unpublished until a mentor verifies and approves it. The Windows installer in this repository is not a source of support instructions.
+
+## Verification
+
+```powershell
 npm run typecheck
 npm run lint
 npm test
-npm run test:e2e          # offline transport interception
 npm run build
-npm run start            # release: live provider only, no sample data
-npm run test:live         # explicitly enabled, budget-limited smoke checks
-npm run verify:release   # fixture import, credential, route and data checks
+npm run test:e2e
+npm run verify:release
 ```
 
-## Working agreement
+The browser suite runs the production build with test-only HTTP interception. Build before running it. Ordinary tests never reach Sarvam. `npm run dev:fixtures` opens the Playwright test UI; production has no fixture mode or fake-response fallback.
 
-Use fixtures until all offline gates pass. Only then use a small, measured live validation run. Keep fixtures in test tooling after cutover, but remove fixture responses, sample participants, fake counts, and fixture controls from the released app. A failed API call must produce an honest failure state, never a fabricated success.
+For the latest live integration results, commands actually run, and dispatch count, see [PROGRESS.md](PROGRESS.md). Live diagnostics require explicit configuration and opt-in; they never run during install, build, start, or ordinary tests.
 
-Do not publish this app or upload real participant material as part of the handoff. Local implementation and narrowly scoped live checks are the next agent's task.
+An explicit resumable live diagnostic is available:
+
+```powershell
+node --env-file-if-exists=.env.local --import tsx scripts/live-smoke.ts --confirm-live
+```
+
+This diagnostic resumes ignored private evidence. Direct Node invocation avoids Windows npm wrappers that may drop forwarded flags.
+
+## Deployment and limits
+
+The live dispatch ledger persists across restarts and data resets. Set `LIVE_MAX_DISPATCHES` privately within your approved budget; `.env.example` defaults to six. This is a request limit, not a credit or rupee estimate.
+
+Private app state/uploads live under `.data/app`. The dispatch ledger/cache are separate under `.data/`. Tests and live-validation reports use isolated directories; the release starts without fake participants or metrics. Keys, recordings, screenshots, raw evidence, state and the installer are ignored by Git.
+
+This is a single-workshop, single-process prototype requiring durable local disk. A GitHub-to-Vercel import is **not** a working deployment path for this storage design; hosted deployment requires a different persistent store and a fresh release test. Remote microphone access needs HTTPS. Automated microphone tests use supplied audio and do not establish physical microphone or noisy-room accuracy.
+
+The tool does not provide full accounts, automatic Kivi control, phone calls, external messaging, or a general troubleshooting chatbot. A failed provider request leaves the participant's issue saved for mentor attention.
+
+## Project documents
+
+| Read | For |
+| --- | --- |
+| [Product requirements](PRD.md) | User flows and acceptance criteria |
+| [Architecture](ARCHITECTURE.md) | Components, storage, routes, and security boundaries |
+| [Implementation plan](IMPLEMENTATION_PLAN.md) | Sequential build gates |
+| [Testing](TESTING.md) | Offline and browser test matrix |
+| [AI contracts](docs/AI_CONTRACTS.md) | Model inputs, outputs, and validation rules |
+| [Progress and evidence](PROGRESS.md) | Checks actually run and live-dispatch record |
+| [Demo guide](docs/DEMO.md) | Walkthrough and release checklist |
+
+See [AGENTS.md](AGENTS.md) before changing application code.
