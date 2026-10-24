@@ -18,9 +18,13 @@ Voice questions, screenshot context, reviewed answers, and a mentor when you nee
 
 ---
 
-In a busy build session, the same question can stop several people. Unblock turns those repeated questions into shared, reviewed guidance while keeping everyone who is still stuck visible.
+### One mentor. A room full of builders. Nobody should lose momentum waiting for the same answer.
 
-Built for a **Kivi workshop**, it closes the loop from “I need help” to “that worked”—and lets a mentor approve a useful answer for the next person who asks.
+In a one-hour workshop, waiting for help can consume the time you came to spend building. Questions repeat, people explain the same issue in different languages, and a useful answer often reaches only the person who asked.
+
+**Unblock makes each reviewed answer useful to the next person, too.** Ask by voice, add a screenshot, and get guidance that fits your setup. If no approved answer applies, a mentor can review related reports and respond to several people together. Each participant confirms whether it actually worked, so anyone still stuck stays visible.
+
+Built for a **Kivi workshop** with Sarvam’s speech, vision, language, and voice capabilities, Unblock turns workshop support into shared knowledge that grows as the room builds.
 
 ![Unblock participant workspace with voice input, screenshot upload, platform context, and reviewed FAQs](docs/screenshots/participant.png)
 
