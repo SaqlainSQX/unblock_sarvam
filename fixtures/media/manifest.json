@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "provenance": "synthetic",
+  "generatedAt": "2026-10-24",
+  "speechGenerator": "Windows System.Speech stock installed voice, offline; not Sarvam",
+  "imageGenerator": "Local System.Drawing question card; not actual Kivi UI",
+  "expectedQuestion": "How can I edit selected text in Kivi?",
+  "audio": {
+    "sampleRate": 16000,
+    "channels": 1,
+    "bitsPerSample": 16,
+    "durationSeconds": 3.095
+  },
+  "files": [
+    {
+      "path": "question-card.png",
+      "bytes": 22977,
+      "sha256": "f555d9dc949168a765a904cdd773ddc1cf15a9bcee2bb126e4be04b435867e69"
+    },
+    {
+      "path": "question-en.wav",
+      "bytes": 99086,
+      "sha256": "47c1405a87967c8e73497d1dbc6e6d58c0bf2f28df1f39e7c62f2990be01df05"
+    }
+  ]
+}

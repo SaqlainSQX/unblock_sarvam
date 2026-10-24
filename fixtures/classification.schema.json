@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Unblock classification proposal v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["intent", "faqId", "groupId", "evidence", "needsClarification", "clarification", "reasonCode"],
+  "properties": {
+    "intent": {"enum": ["faq", "group", "mentor", "clarify"]},
+    "faqId": {"type": ["string", "null"], "minLength": 1, "maxLength": 100},
+    "groupId": {"type": ["string", "null"], "minLength": 1, "maxLength": 100},
+    "evidence": {"type": "array", "maxItems": 3, "items": {"type": "object", "additionalProperties": false, "required": ["field", "quote"], "properties": {"field": {"enum": ["reviewedText", "ocrText", "attemptedSteps"]}, "quote": {"type": "string", "minLength": 1, "maxLength": 160}}}},
+    "needsClarification": {"type": "boolean"},
+    "clarification": {"type": ["string", "null"], "minLength": 1, "maxLength": 180},
+    "reasonCode": {"enum": ["supported_faq", "similar_symptom", "no_supported_answer", "missing_context", "conflicting_context"]}
+  },
+  "allOf": [
+    {"if": {"properties": {"intent": {"const": "faq"}}}, "then": {"properties": {"faqId": {"type": "string"}, "groupId": {"type": "null"}, "evidence": {"minItems": 1}, "reasonCode": {"const": "supported_faq"}}}},
+    {"if": {"properties": {"intent": {"const": "group"}}}, "then": {"properties": {"groupId": {"type": "string"}, "faqId": {"type": "null"}, "evidence": {"minItems": 1}, "reasonCode": {"const": "similar_symptom"}}}},
+    {"if": {"properties": {"intent": {"enum": ["mentor", "clarify"]}}}, "then": {"properties": {"faqId": {"type": "null"}, "groupId": {"type": "null"}, "reasonCode": {"enum": ["no_supported_answer", "missing_context", "conflicting_context"]}}}},
+    {"if": {"properties": {"intent": {"const": "clarify"}}}, "then": {"properties": {"needsClarification": {"const": true}, "clarification": {"type": "string"}}}, "else": {"properties": {"needsClarification": {"const": false}, "clarification": {"type": "null"}}}}
+  ]
+}

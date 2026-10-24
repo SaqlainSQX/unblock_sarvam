@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "provenance": "synthetic",
+  "releaseSeedAllowed": false,
+  "warning": "Invented exercise for testing mentor workflow. Not a real Kivi error or fix.",
+  "participants": ["Test B", "Test C", "Test D"],
+  "context": {"os": "windows", "distribution": "workshop", "version": "1.9.6"},
+  "reports": [
+    {"participant": "Test B", "text": "SYNTHETIC EXERCISE: worksheet DEMO_FOCUS_01 asks which practice box to use."},
+    {"participant": "Test C", "text": "SYNTHETIC EXERCISE: I also need the practice box for DEMO_FOCUS_01."}
+  ],
+  "mentorAnswer": {
+    "bodyEn": "For this synthetic exercise only, use the worksheet box labelled Practice A. This is not a Kivi troubleshooting instruction.",
+    "bodyHi": "सिर्फ इस काल्पनिक अभ्यास के लिए वर्कशीट में Practice A वाला बॉक्स चुनें। यह Kivi की समस्या का समाधान नहीं है।",
+    "sourceNote": "Invented test worksheet, explicitly approved by test mentor inside fixture mode.",
+    "scope": {"os": ["windows"], "distribution": ["workshop"], "versionPolicy": "exact", "versions": ["1.9.6"], "rationale": "Synthetic test context only."}
+  },
+  "expectedSequence": [
+    "B and C start needs_mentor",
+    "Mentor inspects and confirms group",
+    "Publish answer to both -> answer_available, neither resolved",
+    "B marks solved -> resolved; C marks failed -> fix_failed",
+    "Mentor explicitly approves reuse -> new scoped FAQ",
+    "D submits matching synthetic exercise -> answer_available from approved FAQ",
+    "C remains fix_failed; blocked count is not zero"
+  ]
+}

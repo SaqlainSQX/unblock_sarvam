@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "provenance": "synthetic",
+  "note": "Normalized application fixtures. These are NOT captured Sarvam wire responses. Build separate wire-contract mocks from official docs.",
+  "asr": {"text": "How can I edit selected text in Kivi?", "language": "en-IN"},
+  "asrHindi": {"text": "Kivi में चुने हुए टेक्स्ट को कैसे बदलूं?", "language": "hi-IN"},
+  "classificationKnown": {"intent": "faq", "faqId": "kivi-selected-text", "groupId": null, "evidence": [{"field": "reviewedText", "quote": "edit selected text"}], "needsClarification": false, "clarification": null, "reasonCode": "supported_faq"},
+  "classificationUnknown": {"intent": "mentor", "faqId": null, "groupId": null, "evidence": [], "needsClarification": false, "clarification": null, "reasonCode": "no_supported_answer"},
+  "classificationClarify": {"intent": "clarify", "faqId": null, "groupId": null, "evidence": [], "needsClarification": true, "clarification": "Are you using the public Mac app or the workshop Windows build?", "reasonCode": "missing_context"},
+  "vision": {"jobId": "synthetic-job-01", "states": ["pending", "running", "completed"], "result": {"visible_text": "How can I edit selected text in Kivi?", "error_code": ""}},
+  "tts": {"localAudioFile": "media/question-en.wav", "note": "Offline stock speech tests playback plumbing only; wording is not the approved FAQ answer and this is not Sarvam output."},
+  "failures": [
+    {"code": "unconfigured", "safeMessage": "Speech recognition is not configured. You can type your question.", "retryable": false},
+    {"code": "timeout", "safeMessage": "Processing did not finish. Your request is saved for the mentor.", "retryable": true},
+    {"code": "budget_exhausted", "safeMessage": "The configured API budget has been reached. You can still ask the mentor.", "retryable": false},
+    {"code": "invalid_output", "safeMessage": "We could not read a usable result. Please review or enter the text manually.", "retryable": true}
+  ]
+}

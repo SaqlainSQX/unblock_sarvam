@@ -1,0 +1,16 @@
+node_modules/
+.next/
+out/
+dist/
+coverage/
+test-results/
+playwright-report/
+.data/
+.evidence/
+.env*
+!.env.example
+*.log
+*.tsbuildinfo
+*.exe
+.DS_Store
+Thumbs.db
