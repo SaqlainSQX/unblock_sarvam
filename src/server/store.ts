@@ -2,6 +2,7 @@ import 'server-only';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
+import { setTimeout } from 'node:timers/promises';
 import seed from '../../data/faq.seed.json';
 import type { AppState, FAQ } from '@/domain/types';
 type GlobalQueues = typeof globalThis & { __unblockQueues?: Map<string, Promise<unknown>> };
@@ -16,7 +17,10 @@ export async function atomicWrite(path: string, data: unknown) {
   await mkdir(dirname(path), { recursive: true });
   const tmp = `${path}.${randomUUID()}.tmp`;
   await writeFile(tmp, JSON.stringify(data), { encoding: 'utf8', mode: 0o600 });
-  await rename(tmp, path);
+  for (let attempt=0;;attempt++) {
+    try { await rename(tmp,path); break; }
+    catch(error) { if(attempt>=5 || !['EPERM','EBUSY','EACCES'].includes((error as NodeJS.ErrnoException).code || '')) throw error; await setTimeout(20*(attempt+1)); }
+  }
 }
 export async function readJSON<T>(path: string, fallback: () => T): Promise<T> {
   try { return JSON.parse(await readFile(path, 'utf8')) as T; }

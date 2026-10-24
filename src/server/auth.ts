@@ -19,7 +19,10 @@ export async function authenticate(request: Request, store: Store = getStore()) 
 }
 export function mentorOnly(session: Session) { if (session.role !== 'mentor') throw new AppError(403, 'Mentor access is required.'); }
 export function assertOrigin(request: Request) {
-  if (request.headers.get('origin') !== new URL(request.url).origin) throw new AppError(403, 'This request must come from the workshop page.');
+  let origin: URL;
+  try { origin = new URL(request.headers.get('origin') || ''); } catch { throw new AppError(403, 'This request must come from the workshop page.'); }
+  const host = request.headers.get('host') || new URL(request.url).host;
+  if (origin.host !== host || origin.protocol !== new URL(request.url).protocol) throw new AppError(403, 'This request must come from the workshop page.');
 }
 type LoginGlobal = typeof globalThis & { __unblockLogin?: { attempts: number; reset: number } };
 export function checkPasscode(passcode: string) {

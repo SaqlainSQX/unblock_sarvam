@@ -24,3 +24,5 @@ These decisions keep a one-workshop build focused. Record a short reason and tes
 Anonymous sessions are a workshop convenience, not full account recovery. Clearing a browser cookie loses self-service access to that private history. A mentor passcode is suitable for this controlled prototype, not production organization access control. The application is not a general support agent, a computer-control tool, or a substitute for official Kivi instructions.
 
 The ambitious one-hour plan is a scope/prioritization target. Correctness gates outrank the timer. Cut optional decoration before cutting the closed loop of approved answer -> recipient feedback -> reusable knowledge.
+
+Implementation note: the text workflow was built against the real deterministic exact-FAQ path and disabled provider errors, with synthetic reports in isolated browser-test state. No temporary runtime fixture classifier was necessary. Adapter tests intercept transport instead; this reduces production fixture removal work without relaxing offline verification.

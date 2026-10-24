@@ -20,7 +20,7 @@ Chat request returned HTTP 200 for `sarvam-105b-conversations`, 28 prompt + 12 c
 
 - [x] Gate 0: scaffold/runtime/scripts (final verification scripts arrive with their gates)
 - [x] Gate 1: domain/store/authorization
-- [ ] Gate 2: complete text workflow
+- [x] Gate 2: complete text workflow
 - [ ] Gate 3: media/adapters/budget/cache
 - [ ] Gate 4: grounding/grouping
 - [ ] Gate 5: full offline checks
@@ -33,6 +33,8 @@ The next agent must append real entries, not replace failures with summaries.
 
 | Date/time | Gate | Command or action | Outcome | Evidence | Mode |
 | --- | --- | --- | --- | --- | --- |
+| 2026-10-24 16:24 IST | 2 | `npm run test:e2e` | 2 passed: complete participant/mentor/group/independent-outcome/reuse/withdrawal loop and desktop/mobile layout | Playwright output; `.evidence/participant-desktop.png`, `.evidence/participant-mobile.png`, `.evidence/gate2-mentor.png` | Offline; real app routes, zero inference |
+| 2026-10-24 16:24 IST | 2 | Browser failure repairs | Corrected Origin comparison for Next's internal host rewriting; added bounded Windows rename retry; corrected ambiguous test locator | Re-ran full browser suite successfully | Offline |
 | 2026-10-24 16:02 IST | 0–1 | `npm run typecheck`; `npm test`; local dev startup | Typecheck passed; 5 tests passed, including individual feedback/reuse, scope, permissions, stale revisions, idempotency and concurrent/restarted store | Local command output | Offline; zero inference |
 | 2026-10-24 16:02 IST | 0–1 | Initial domain test run | Failed because sandbox temporary directory denied replacement rename; tests moved to isolated `.data/tests` and passed without weakening atomic writes | Local command output | Offline |
 | 2026-10-24 16:00 IST | GitHub | Initialize and push handoff | `main` tracks `origin/main`; initial handoff pushed | Commit `7eb0ba7` | GitHub; no inference |

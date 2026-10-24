@@ -1,0 +1,66 @@
+'use client';
+import { useCallback, useEffect, useState } from 'react';
+import { ArrowRight, ArrowUpRight, Check, ChevronDown, ChevronRight, Clock3, FileText, Lightbulb, LoaderCircle, MessageSquare, PencilLine, Plus, Send, Sparkles, ThumbsUp, Undo2 } from 'lucide-react';
+import type { Context, FAQView, IssueView } from '@/domain/types';
+import { api, message, RequestError } from './client';
+import { Empty, ErrorNotice, ScopeLabel, Shell, StateBadge } from './shared';
+import { Listen, MediaInput } from './media-input';
+const blankContext: Context = { os: 'unknown', distribution: 'unknown', version: null };
+export function Participant() {
+  const [tab, setTab] = useState<'ask' | 'requests'>('ask');
+  const [ready, setReady] = useState(false), [error, setError] = useState(''), [busy, setBusy] = useState(false);
+  const [faqs, setFaqs] = useState<FAQView[]>([]), [issues, setIssues] = useState<IssueView[]>([]);
+  const [text, setText] = useState(''), [context, setContext] = useState<Context>(blankContext), [attempts, setAttempts] = useState('');
+  const [faqId, setFaqId] = useState<string>(), [editing, setEditing] = useState<IssueView>();
+  const [transcript,setTranscript]=useState(''),[ocrText,setOcrText]=useState(''),[attachments,setAttachments]=useState<Partial<Record<'audio'|'image',string>>>({});
+  const load = useCallback(async () => {
+    const [workshop, history] = await Promise.all([api<{ faqs: FAQView[] }>('workshop'), api<{ issues: IssueView[] }>('issues')]);
+    setFaqs(workshop.faqs); setIssues(history.issues);
+  }, []);
+  useEffect(() => {
+    let active = true;
+    (async () => { try { try { const me = await api<{ role: string }>('me'); if (me.role !== 'participant') throw new Error('This browser is signed in as a mentor. Use a separate browser profile for participant testing, or join again below.'); } catch (e) { if (e instanceof RequestError && e.status === 401) await api('session', {}); else throw e; } await load(); if (active) setReady(true); } catch (e) { if (active) setError(message(e)); } })();
+    const timer = setInterval(() => { if (active && !document.hidden) load().catch(() => undefined); }, 4000);
+    return () => { active = false; clearInterval(timer); };
+  }, [load]);
+  async function submit(event: React.FormEvent) {
+    event.preventDefault(); setError(''); setBusy(true);
+    try {
+      const payload = { reviewedText: text, context, attemptedSteps: attempts,transcript,ocrText,mediaIds:Object.values(attachments), ...(faqId ? { faqId } : {}), ...(editing ? { revision: editing.revision } : {}) };
+      if (editing) await api(`issues/${editing.id}`, payload, 'PATCH'); else await api('issues', payload);
+      setText(''); setAttempts('');setTranscript('');setOcrText('');setAttachments({}); setFaqId(undefined); setEditing(undefined); setTab('requests'); await load();
+    } catch (e) { setError(message(e)); } finally { setBusy(false); }
+  }
+  const solved = issues.filter(i => i.helpState === 'resolved').length;
+  return <Shell><section className="page-heading"><div className="eyebrow"><span/> KIVI WORKSHOP EDITION</div><h1>Keep your momentum.</h1><p>Ask a question. Find a clear next step. Get back to building.</p></section>
+    <div className="participant-tabs"><button className={tab === 'ask' ? 'selected' : ''} onClick={() => setTab('ask')}><Plus size={17}/>Ask for help</button><button className={tab === 'requests' ? 'selected' : ''} onClick={() => setTab('requests')}><MessageSquare size={17}/>My requests <span className="count-pill">{issues.length}</span></button><span className="private-note"><ShieldSmall/>Your requests are private</span></div>
+    <ErrorNotice error={error}/>{!ready && error && <button className="button secondary" onClick={async () => { await api('session', {}); location.reload(); }}>Join as participant</button>}
+    <div className="participant-grid"><section>
+      {tab === 'ask' ? <form className="card question-card" onSubmit={submit}><div className="card-title"><span className="icon-square purple"><PencilLine size={20}/></span><div><h2>{editing ? 'Update your request' : 'What’s getting in your way?'}</h2><p>A little context helps us find the right answer.</p></div></div>
+        <label className="field-label" htmlFor="question">Your question</label><textarea id="question" className="question-input" maxLength={2000} required minLength={3} placeholder="e.g. How do I edit selected text in Kivi?" value={text} onChange={e => { setText(e.target.value); setFaqId(undefined); }}/><div className="input-bottom"><span><Sparkles size={13}/> English, हिंदी, or a little of both</span><span>{text.length}/2000</span></div>
+        <MediaInput onReviewed={(value,id,kind)=>{setFaqId(undefined);setAttachments(value=>({...value,[kind]:id}));if(kind==='audio'){setTranscript(value);if(!text.trim())setText(value.slice(0,2000));}else{setOcrText(value);if(!text.trim())setText(value.slice(0,2000));}}}/>
+        {(transcript||ocrText)&&<div className="reviewed-context"><span><Check size={13}/>Reviewed context attached</span>{transcript&&<details><summary>Voice transcript</summary><p>{transcript}</p></details>}{ocrText&&<details><summary>Screenshot text</summary><p>{ocrText}</p></details>}</div>}
+        {faqId && <div className="info-notice">Selected approved FAQ. Choose the platform and distribution it applies to.</div>}
+        <div className="context-heading"><span>MAKE IT SPECIFIC</span><span>Platform details</span></div><div className="form-grid three"><label>Operating system<select aria-label="Operating system" value={context.os} onChange={e => setContext({ ...context, os: e.target.value as Context['os'] })}><option value="unknown">Choose platform</option><option value="windows">Windows</option><option value="macos">macOS</option><option value="other">Other</option></select></label><label>App distribution<select aria-label="App distribution" value={context.distribution} onChange={e => setContext({ ...context, distribution: e.target.value as Context['distribution'] })}><option value="unknown">Choose distribution</option><option value="workshop">Workshop build</option><option value="public">Public app</option></select></label><label>Kivi version <span className="optional">optional</span><input aria-label="Kivi version" maxLength={40} placeholder="e.g. 1.9.6" value={context.version || ''} onChange={e => setContext({ ...context, version: e.target.value || null })}/></label></div>
+        <details className="more-context"><summary>Already tried something? <ChevronDown size={14}/></summary><label className="sr-only" htmlFor="attempts">Steps already tried</label><textarea id="attempts" maxLength={1000} placeholder="Tell the mentor what you tried…" value={attempts} onChange={e => setAttempts(e.target.value)}/><label>Target app <input maxLength={100} value={context.targetApp || ''} onChange={e => setContext({ ...context, targetApp: e.target.value })}/></label></details>
+        <div className="submit-row"><span><Clock3 size={14}/> Saved before we look for an answer</span><button className="button primary" disabled={busy || !ready}>{busy ? <LoaderCircle className="spin" size={17}/> : <Send size={16}/>} {editing ? 'Save changes' : 'Find my next step'}</button></div>
+        {editing && <button type="button" className="text-button" onClick={() => { setEditing(undefined); setText(''); }}>Cancel edit</button>}
+      </form> : <section className="request-list"><div className="section-top"><h2>Your requests</h2><span className="small">{solved} solved · {issues.length - solved} open</span></div>{issues.length === 0 ? <div className="card"><Empty title="A clear runway" detail="Your questions and mentor replies will appear here."/><button className="button secondary center-button" onClick={() => setTab('ask')}>Ask your first question <ArrowRight size={16}/></button></div> : issues.map(issue => <IssueCard key={issue.id} issue={issue} refresh={load} onError={setError} edit={() => { setEditing(issue); setText(issue.reviewedText); setContext(issue.context); setAttempts(issue.attemptedSteps);setTranscript(issue.transcript);setOcrText(issue.ocrText);setAttachments(Object.fromEntries(issue.media.map(m=>[m.kind,m.id]))); setTab('ask'); }}/>)}</section>}
+      <div className="how-it-works"><div><span>01</span><strong>Ask in your words</strong><p>Text or voice, with context.</p></div><ChevronRight size={17}/><div><span>02</span><strong>Get the right help</strong><p>Reviewed guidance or a mentor.</p></div><ChevronRight size={17}/><div><span>03</span><strong>Tell us what worked</strong><p>Your feedback closes the loop.</p></div></div>
+    </section><aside className="help-column"><div className="card faq-card"><div className="card-title compact"><span className="icon-square amber"><Lightbulb size={19}/></span><div><h2>A head start</h2><p>Common questions, reviewed answers.</p></div></div><div className="faq-list">{faqs.map(faq => <button key={faq.id} onClick={() => { setText(faq.title); setFaqId(faq.id); setEditing(undefined); setTab('ask'); }}><span><strong>{faq.title}</strong><ScopeLabel scope={faq.scope}/>{faq.occurrences > 0 && <small>{faq.occurrences} actual answer deliveries</small>}</span><ArrowUpRight size={17}/></button>)}</div><div className="faq-foot"><FileText size={14}/> Public Mac guidance · workshop answers grow here</div></div><div className="mentor-callout"><span className="mentor-symbol">✳</span><h3>Some questions need a human.</h3><p>If there isn’t a reviewed answer for your setup, your request goes to the mentor desk.</p><span>We keep the context, so you don’t have to repeat it.</span></div></aside></div>
+  </Shell>;
+}
+function ShieldSmall() { return <Check size={13}/>; }
+function IssueCard({ issue, refresh, onError, edit }: { issue: IssueView; refresh: () => Promise<void>; onError: (error: string) => void; edit: () => void }) {
+  const [busy, setBusy] = useState(false), [steps, setSteps] = useState(issue.attemptedSteps);
+  const latest = issue.deliveries.at(-1);
+  async function feedback(outcome: 'solved' | 'failed' | 'reopen') { setBusy(true); try { await api(`issues/${issue.id}/feedback`, { outcome, answerId: latest?.answer.id ?? null, attemptedSteps: steps, revision: issue.revision }); await refresh(); } catch (e) { onError(message(e)); } finally { setBusy(false); } }
+  return <article className="card issue-card"><div className="issue-top"><StateBadge state={issue.helpState}/><time className="small">{new Date(issue.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</time></div><h3>{issue.reviewedText}</h3><div className="issue-meta">{issue.context.os === 'macos' ? 'macOS' : issue.context.os} · {issue.context.distribution}{issue.context.version ? ` · ${issue.context.version}` : ''}<button className="text-button" onClick={edit}><PencilLine size={13}/> Edit</button></div>
+    {issue.clarification && <div className="info-notice">{issue.clarification}</div>}{issue.processingError && <div><p className="small muted">{issue.processingError} Your request is saved for the mentor.</p><button type="button" className="text-button" disabled={busy} onClick={async()=>{setBusy(true);try{await api(`issues/${issue.id}/analyze`,{revision:issue.revision});await refresh();}catch(e){onError(message(e));}finally{setBusy(false);}}}>Check again</button></div>}
+    {latest ? <div className="answer-panel"><div className="answer-eyebrow"><Sparkles size={14}/> REVIEWED ANSWER</div><h4>{latest.answer.title}</h4><p className="answer-body">{latest.answer.bodyEn}</p>{latest.answer.bodyHi && <details><summary>हिंदी में पढ़ें</summary><p lang="hi" className="answer-body">{latest.answer.bodyHi}</p></details>}<Listen answerId={latest.answer.id} hasHindi={!!latest.answer.bodyHi} disabled={latest.withdrawn||latest.superseded}/><ScopeLabel scope={latest.answer.scope}/><p className="answer-source">{latest.answer.source.url ? <a href={latest.answer.source.url} target="_blank" rel="noreferrer">View source <ArrowUpRight size={12}/></a> : latest.answer.source.note}</p>{latest.withdrawn || latest.superseded ? <div className="info-notice">This answer has been {latest.withdrawn ? 'withdrawn' : 'updated'}. Ask the mentor for current guidance.</div> : null}
+      <label className="field-label small" htmlFor={`steps-${issue.id}`}>What did you try? <span className="optional">optional</span></label><input id={`steps-${issue.id}`} maxLength={1000} value={steps} onChange={e => setSteps(e.target.value)} placeholder="Useful context if you’re still stuck"/>
+      <div className="feedback-row"><span>Did this get you moving?</span><button className="button success small-button" disabled={busy} onClick={() => feedback('solved')}><ThumbsUp size={14}/>Solved</button><button className="button secondary small-button" disabled={busy} onClick={() => feedback('failed')}>Still stuck</button></div>
+    </div> : <div className="waiting-note"><Clock3 size={17}/><span><strong>Your question is in the mentor queue.</strong><br/>You can keep this tab open. Replies appear here.</span></div>}
+    {(issue.helpState === 'resolved' || issue.helpState === 'fix_failed') && <button className="text-button" disabled={busy} onClick={() => feedback('reopen')}><Undo2 size={13}/>Ask for more help</button>}
+  </article>;
+}

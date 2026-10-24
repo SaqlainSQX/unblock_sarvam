@@ -1,6 +1,7 @@
 import type { NextConfig } from 'next';
 const config: NextConfig = {
   agentRules: false,
+  distDir: process.env.NEXT_BUILD_DIR || '.next',
   poweredByHeader: false,
   serverExternalPackages: ['sharp'],
   async headers() {
